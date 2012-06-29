@@ -83,9 +83,6 @@ if not os.path.exists(args.root):
 updates, clones = 0, 0
 for name, url in user_repositories(args.user):
     directory = os.path.realpath(os.path.join(args.root, name))   
-    while (os.path.exists(directory)
-           and not is_tracking_repository(directory, url)):
-        directory += '_'
 
     if os.path.exists(directory):
         logger.info('Updating {0}...'.format(name))
