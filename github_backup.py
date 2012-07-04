@@ -50,7 +50,7 @@ def clone_repository(url, directory):
 def update_repository(directory):
     cwd = os.getcwd()
     os.chdir(directory)
-    subprocess.call(['git', 'fetch', 'origin'],
+    subprocess.call(['git', 'pull'],
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     os.chdir(cwd)
 
