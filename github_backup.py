@@ -36,6 +36,12 @@ def git_installed():
         return False
     return True
 
+def user_organizations(user):
+    url = 'https://api.github.com/users/' + user + '/orgs'
+    response = urllib2.urlopen(url).read().decode('utf-8')
+    repositories = json.loads(response)
+    return [repository['login'] for repository in repositories]
+
 def user_repositories(user):
     url = 'https://api.github.com/users/' + user + '/repos'
     response = urllib2.urlopen(url).read().decode('utf-8')
@@ -81,16 +87,20 @@ if not os.path.exists(args.root):
     os.makedirs(args.root)
 
 updates, clones = 0, 0
-for name, url in user_repositories(args.user):
-    directory = os.path.realpath(os.path.join(args.root, name))   
 
-    if os.path.exists(directory):
-        logger.info('Updating {0}...'.format(name))
-        update_repository(directory)
-        updates += 1
-    else:
-        logger.info('Cloning {0}...'.format(name))
-        clone_repository(url, directory)
-        clones += 1
+for user in user_organizations(args.user) + [args.user]:
+    print user
+    for name, url in user_repositories(user):
+
+        directory = os.path.realpath(os.path.join(args.root, name))   
+    
+        if os.path.exists(directory):
+            logger.info('Updating {0}...'.format(name))
+            update_repository(directory)
+            updates += 1
+        else:
+            logger.info('Cloning {0}...'.format(name))
+            clone_repository(url, directory)
+            clones += 1
         
 logger.info('{0} new repositories, {1} updated.'.format(clones, updates))
