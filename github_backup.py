@@ -43,12 +43,15 @@ def user_organizations(user):
     return [repository['login'] for repository in repositories]
 
 def user_repositories(user):
-    url = 'https://api.github.com/users/' + user + '/repos'
+    url = 'https://api.github.com/users/' + user + '/repos?per_page=100'
     response = urllib2.urlopen(url).read().decode('utf-8')
     repositories = json.loads(response)
     for repository in repositories:
         yield (repository['name'], repository['git_url'])
-    
+    if args.stars:
+        for repo in json.loads(urllib2.urlopen('https://api.github.com/users/'+user+'/starred?per_page=100').read().decode('utf-8')):
+            yield (repo['name'], repo['git_url'])
+ 
 def clone_repository(url, directory):
     subprocess.call(['git', 'clone', url, directory],
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -78,6 +81,7 @@ if not git_installed():
 parser = argparse.ArgumentParser(description='Backs up all your public GitHub repositories.')
 parser.add_argument('user', type=str, help='your GitHub user name')
 parser.add_argument('root', type=str, help='the target directory')
+parser.add_argument('--stars', help='backup starred repos?', default=False, action='store_true')
 args = parser.parse_args()
 args.root = os.path.realpath(os.path.expanduser(args.root))
 
