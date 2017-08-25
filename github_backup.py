@@ -99,7 +99,7 @@ for user in user_organizations(args.user) + [args.user]:
 
         directory = os.path.realpath(os.path.join(args.root, name))   
         if args.dry_run:
-            logger.info('Not cloining / updating {0}...'.format(name))
+            logger.info('Not cloning / updating {0}...'.format(name))
         else:
             if os.path.exists(directory):
                 logger.info('Updating {0}...'.format(name))
