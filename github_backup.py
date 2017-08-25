@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import argparse
 import json
 import logging
@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 try:
-    import urllib2
+    import urllib.request, urllib.error, urllib.parse
 except ImportError:
     import urllib.request as urllib2
 
@@ -38,18 +38,18 @@ def git_installed():
 
 def user_organizations(user):
     url = 'https://api.github.com/users/' + user + '/orgs'
-    response = urllib2.urlopen(url).read().decode('utf-8')
+    response = urllib.request.urlopen(url).read().decode('utf-8')
     repositories = json.loads(response)
     return [repository['login'] for repository in repositories]
 
 def user_repositories(user):
     url = 'https://api.github.com/users/' + user + '/repos?per_page=100'
-    response = urllib2.urlopen(url).read().decode('utf-8')
+    response = urllib.request.urlopen(url).read().decode('utf-8')
     repositories = json.loads(response)
     for repository in repositories:
         yield (repository['name'], repository['git_url'])
     if args.stars:
-        for repo in json.loads(urllib2.urlopen('https://api.github.com/users/'+user+'/starred?per_page=100').read().decode('utf-8')):
+        for repo in json.loads(urllib.request.urlopen('https://api.github.com/users/'+user+'/starred?per_page=100').read().decode('utf-8')):
             yield (repo['name'], repo['git_url'])
  
 def clone_repository(url, directory):
@@ -82,6 +82,7 @@ parser = argparse.ArgumentParser(description='Backs up all your public GitHub re
 parser.add_argument('user', type=str, help='your GitHub user name')
 parser.add_argument('root', type=str, help='the target directory')
 parser.add_argument('--stars', help='backup starred repos?', default=False, action='store_true')
+parser.add_argument('--dry_run', help='simulate run? (no git)', default=False, action='store_true')
 args = parser.parse_args()
 args.root = os.path.realpath(os.path.expanduser(args.root))
 
@@ -93,18 +94,20 @@ if not os.path.exists(args.root):
 updates, clones = 0, 0
 
 for user in user_organizations(args.user) + [args.user]:
-    print user
+    print(user)
     for name, url in user_repositories(user):
 
         directory = os.path.realpath(os.path.join(args.root, name))   
-    
-        if os.path.exists(directory):
-            logger.info('Updating {0}...'.format(name))
-            update_repository(directory)
-            updates += 1
+        if args.dry_run:
+            logger.info('Not cloining / updating {0}...'.format(name))
         else:
-            logger.info('Cloning {0}...'.format(name))
-            clone_repository(url, directory)
-            clones += 1
+            if os.path.exists(directory):
+                logger.info('Updating {0}...'.format(name))
+                update_repository(directory)
+                updates += 1
+            else:
+                logger.info('Cloning {0}...'.format(name))
+                clone_repository(url, directory)
+                clones += 1
         
 logger.info('{0} new repositories, {1} updated.'.format(clones, updates))
